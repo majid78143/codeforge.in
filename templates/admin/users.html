@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <form class="d-flex gap-2" method="GET">
+    <input type="text" class="admin-input" name="q" value="{{ q }}" placeholder="Search by name or email..." style="width:280px">
+    <button class="btn-admin btn-admin-secondary btn" type="submit"><i class="fa fa-search"></i></button>
+  </form>
+</div>
+<div class="admin-table-card">
+  <div class="table-header"><h5>Users ({{ total }})</h5></div>
+  <div class="table-responsive">
+    <table class="admin-table">
+      <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Last Login</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div class="fw-600" style="font-size:0.875rem">{{ u.display_name or u.email }}</div>
+            <div class="text-muted" style="font-size:0.75rem">{{ u.email }}</div>
+          </td>
+          <td><span class="badge bg-secondary">{{ u.role|default('user')|title }}</span></td>
+          <td><span class="status-pill {% if u.active|default(True) %}status-active{% else %}status-inactive{% endif %}">{% if u.active|default(True) %}Active{% else %}Inactive{% endif %}</span></td>
+          <td class="text-muted" style="font-size:0.8rem">{{ u.created_at[:10] if u.created_at else '-' }}</td>
+          <td class="text-muted" style="font-size:0.8rem">{{ u.last_login[:10] if u.last_login else '-' }}</td>
+          <td>
+            <button class="btn-admin {% if u.active|default(True) %}btn-admin-warning{% else %}btn-admin-success{% endif %} btn btn-sm" onclick="toggleUser('{{ u.email }}')">{% if u.active|default(True) %}Suspend{% else %}Activate{% endif %}</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if total_pages > 1 %}
+  <div class="p-3 d-flex gap-1 justify-content-center">
+    {% for i in range(1, total_pages+1) %}
+    <a href="?page={{ i }}&q={{ q }}" class="btn-admin btn btn-sm {% if i == page %}btn-admin-primary{% else %}btn-admin-secondary{% endif %}">{{ i }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
