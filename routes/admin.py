@@ -453,7 +453,7 @@ def update_settings():
     if 'homepage_trending_limit' in update:
         update['homepage_trending_limit'] = int(update['homepage_trending_limit'])
     if 'announcement_active' in update:
-        update['announcement_active'] = update['announcement_active'] in [True, , '1', 'on']
+        update['announcement_active'] = update['announcement_active'] in [True,  '1', 'on']
     db.settings.update_one({"key": "store"}, {"$set": update})
     log_admin_action(db, session['admin_email'], "update_settings", "Store settings updated")
     return jsonify({"status": "ok"})
