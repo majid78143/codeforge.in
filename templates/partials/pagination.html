@@ -1,0 +1,16 @@
+{% if total_pages > 1 %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center gap-1">
+    {% if has_prev or page > 1 %}
+    <li class="page-item"><a class="page-link" href="?page={{ page - 1 }}&{{ extra_params | default('') }}">&laquo; Prev</a></li>
+    {% endif %}
+    {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+    <li class="page-item {% if p == page %}active{% endif %}"><a class="page-link" href="?page={{ p }}&{{ extra_params | default('') }}">{{ p }}</a></li>
+    {% endfor %}
+    {% if page < total_pages %}
+    <li class="page-item"><a class="page-link" href="?page={{ page + 1 }}&{{ extra_params | default('') }}">Next &raquo;</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
