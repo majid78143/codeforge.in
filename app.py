@@ -9,10 +9,7 @@ def create_app():
     app.config.from_object(Config)
 
     os.makedirs('/tmp/flask_sessions', exist_ok=True)
-
-    # Initialize Flask-Session (filesystem-backed)
     Session(app)
-
     csrf = CSRFProtect(app)
 
     from routes.auth import auth_bp
