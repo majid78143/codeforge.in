@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template, session
 from flask_wtf.csrf import CSRFProtect
+from flask_session import Session
 from config import Config
 
 def create_app():
@@ -9,9 +10,11 @@ def create_app():
 
     os.makedirs('/tmp/flask_sessions', exist_ok=True)
 
+    # Initialize Flask-Session (filesystem-backed)
+    Session(app)
+
     csrf = CSRFProtect(app)
 
-    # Register blueprints
     from routes.auth import auth_bp
     from routes.marketplace import marketplace_bp
     from routes.cart import cart_bp
@@ -25,11 +28,6 @@ def create_app():
     app.register_blueprint(checkout_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(admin_bp)
-
-    # Initialize DB on startup
-    with app.app_context():
-        from models.db import get_db
-        get_db()
 
     @app.errorhandler(404)
     def not_found(e):
@@ -45,20 +43,26 @@ def create_app():
 
     @app.context_processor
     def inject_globals():
-        from models.db import get_db
-        db = get_db()
         cart_count = 0
         notif_count = 0
-        if session.get('user_email'):
-            cart = db.carts.find_one({"user_email": session['user_email']})
-            cart_count = len(cart.get('items', [])) if cart else 0
-            notif_count = db.notifications.count_documents({"user_email": session['user_email'], "read": False})
-        settings = db.settings.find_one({"key": "store"}) or {}
+        site_settings = {}
+        try:
+            from models.db import get_db
+            db = get_db()
+            if session.get('user_email'):
+                cart = db.carts.find_one({"user_email": session['user_email']})
+                cart_count = len(cart.get('items', [])) if cart else 0
+                notif_count = db.notifications.count_documents(
+                    {"user_email": session['user_email'], "read": False}
+                )
+            site_settings = db.settings.find_one({"key": "store"}) or {}
+        except Exception:
+            pass
         from config import Config
         return dict(
             cart_count=cart_count,
             notif_count=notif_count,
-            site_settings=settings,
+            site_settings=site_settings,
             firebase_config=Config.FIREBASE_CONFIG,
             current_user_email=session.get('user_email'),
             current_user_name=session.get('user_name'),
@@ -67,13 +71,10 @@ def create_app():
             admin_role=session.get('admin_role'),
         )
 
-    # CSRF exempt for Firebase auth sync
     csrf.exempt(auth_bp)
-
     return app
 
 app = create_app()
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=5000)
-  
