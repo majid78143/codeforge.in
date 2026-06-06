@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Wishlist - {{ site_settings.site_name | default('CodeForge Market') }}{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <h2 class="fw-800 mb-4">My Wishlist <span class="text-muted fw-400" style="font-size:1rem">({{ products|length }} items)</span></h2>
+  {% if products %}
+  <div class="row g-4">
+    {% for p in products %}<div class="col-sm-6 col-lg-4">{% include 'partials/product_card.html' %}</div>{% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5"><div style="font-size:4rem;margin-bottom:1rem">❤️</div><h4 class="fw-700">Your wishlist is empty</h4><p class="text-muted mb-4">Save products you love for later!</p><a href="/marketplace" class="btn-primary-main btn">Browse Marketplace</a></div>
+  {% endif %}
+</div>
+{% endblock %}
