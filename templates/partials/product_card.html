@@ -1,0 +1,31 @@
+<div class="product-card">
+  <div class="card-img-wrapper">
+    <img src="{{ p.thumbnail_image_url or 'https://placehold.co/400x225/e2e8f0/94a3b8?text=No+Image' }}" alt="{{ p.title }}" loading="lazy">
+    {% if p.tags %}
+      {% if 'featured' in p.tags %}<span class="badge-tag badge-featured">Featured</span>
+      {% elif 'bestseller' in p.tags %}<span class="badge-tag badge-bestseller">Bestseller</span>
+      {% elif 'trending' in p.tags %}<span class="badge-tag badge-trending">Trending</span>
+      {% elif 'new' in p.tags %}<span class="badge-tag badge-new">New</span>
+      {% elif 'premium' in p.tags %}<span class="badge-tag badge-premium">Premium</span>
+      {% endif %}
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="product-category">{{ p.category or 'General' }}</div>
+    <div class="product-title">{{ p.title }}</div>
+    <div class="product-price">
+      {% if p.discount_price %}
+        <span class="price-current">₹{{ "%.0f"|format(p.discount_price) }}</span>
+        <span class="price-original">₹{{ "%.0f"|format(p.price) }}</span>
+        <span class="discount-badge">{{ ((1 - p.discount_price/p.price)*100)|round(0)|int }}% OFF</span>
+      {% else %}
+        <span class="price-current">₹{{ "%.0f"|format(p.price) }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-actions">
+    <a href="/product/{{ p._id }}" class="btn-add-cart">View Details</a>
+    <button class="btn-wishlist {% if p._id in (current_wishlist or []) %}active{% endif %}" data-wishlist="{{ p._id }}" title="Add to Wishlist"><i class="fa fa-heart"></i></button>
+  </div>
+</div>
+
