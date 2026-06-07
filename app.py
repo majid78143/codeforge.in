@@ -109,7 +109,19 @@ def create_app():
                 "pending_custom_orders": db.custom_orders.count_documents({"status": "pending"}),
                 "total_downloads": db.download_logs.count_documents({}),
             }
-            return str(stats)
+            recent_orders = list(db.orders.find({"payment_status": "paid"}).sort("paid_at", -1).limit(5))
+            recent_users = list(db.users.find().sort("created_at", -1).limit(5))
+            revenue_chart = []
+            for i in range(6, -1, -1):
+                day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+                day_rev = sum(o.get('total', 0) for o in db.orders.find({"payment_status": "paid", "paid_at": {"$gte": day_start, "$lt": day_end}}, {"total": 1}))
+                revenue_chart.append({"date": day_start.strftime("%b %d"), "revenue": day_rev})
+            return render_template('admin/dashboard.html',
+                stats=stats,
+                recent_orders=[serialize_doc(o) for o in recent_orders],
+                recent_users=[serialize_doc(u) for u in recent_users],
+                revenue_chart=revenue_chart)
         except Exception:
             return f"<pre>{tb.format_exc()}</pre>"
 
