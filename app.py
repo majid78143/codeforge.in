@@ -89,6 +89,7 @@ def create_app():
             return f"Error: {e}"
 
     csrf.exempt(auth_bp)
+    csrf.exempt(admin_bp)  # ← YAHI FIX HAI
     return app
 
 app = create_app()
