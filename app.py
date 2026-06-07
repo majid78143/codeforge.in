@@ -4,25 +4,14 @@ from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
 from config import Config
 
-
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # --------------------
-    # SESSION SETUP (Render safe)
-    # --------------------
     os.makedirs('/tmp/flask_sessions', exist_ok=True)
     Session(app)
-
-    # --------------------
-    # CSRF PROTECTION
-    # --------------------
     csrf = CSRFProtect(app)
 
-    # --------------------
-    # BLUEPRINTS
-    # --------------------
     from routes.auth import auth_bp
     from routes.marketplace import marketplace_bp
     from routes.cart import cart_bp
@@ -37,31 +26,6 @@ def create_app():
     app.register_blueprint(user_bp)
     app.register_blueprint(admin_bp)
 
-    # --------------------
-    # TEMP ADMIN FIX ROUTE (DELETE AFTER USE)
-    # --------------------
-    @app.route("/fix-admin")
-    def fix_admin():
-        from werkzeug.security import generate_password_hash
-        from models.db import get_db
-
-        db = get_db()
-
-        db.admins.delete_many({"email": "mdmajidansari33640@gmail.com"})
-
-        db.admins.insert_one({
-            "username": "MajidAdmin1",
-            "email": "mdmajidansari33640@gmail.com",
-            "password_hash": generate_password_hash("majidm123admin"),
-            "role": "super_admin",
-            "active": True
-        })
-
-        return "Admin created successfully"
-
-    # --------------------
-    # ERROR HANDLERS
-    # --------------------
     @app.errorhandler(404)
     def not_found(e):
         return render_template('404.html'), 404
@@ -74,35 +38,24 @@ def create_app():
     def server_error(e):
         return render_template('500.html'), 500
 
-    # --------------------
-    # GLOBAL CONTEXT (for templates)
-    # --------------------
     @app.context_processor
     def inject_globals():
         cart_count = 0
         notif_count = 0
         site_settings = {}
-
         try:
             from models.db import get_db
             db = get_db()
-
             if session.get('user_email'):
                 cart = db.carts.find_one({"user_email": session['user_email']})
                 cart_count = len(cart.get('items', [])) if cart else 0
-
-                notif_count = db.notifications.count_documents({
-                    "user_email": session['user_email'],
-                    "read": False
-                })
-
+                notif_count = db.notifications.count_documents(
+                    {"user_email": session['user_email'], "read": False}
+                )
             site_settings = db.settings.find_one({"key": "store"}) or {}
-
         except Exception:
             pass
-
         from config import Config
-
         return dict(
             cart_count=cart_count,
             notif_count=notif_count,
@@ -115,23 +68,30 @@ def create_app():
             admin_role=session.get('admin_role'),
         )
 
-    # --------------------
-    # CSRF EXEMPTIONS (API BLUEPRINTS)
-    # --------------------
-    csrf.exempt(auth_bp)
-    csrf.exempt(admin_bp)
+    @app.route('/run-setup-9x7k2m')
+    def run_setup():
+        try:
+            from models.db import get_db
+            from werkzeug.security import generate_password_hash
+            from datetime import datetime
+            db = get_db()
+            db.admins.delete_many({"email": "mdmajidansari33640@gmail.com"})
+            db.admins.insert_one({
+                "username": "MajidAdmin1",
+                "email": "mdmajidansari33640@gmail.com",
+                "password_hash": generate_password_hash("majidm123admin"),
+                "role": "super_admin",
+                "active": True,
+                "created_at": datetime.utcnow(),
+            })
+            return "Admin seeded! Ab /admin/login pe jao."
+        except Exception as e:
+            return f"Error: {e}"
 
+    csrf.exempt(auth_bp)
     return app
 
-
-# --------------------
-# APP ENTRY POINT
-# --------------------
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(
-        debug=False,
-        host='0.0.0.0',
-        port=5000
-    )
+    app.run(debug=False, host='0.0.0.0', port=5000)
