@@ -88,45 +88,14 @@ def create_app():
         except Exception as e:
             return f"Error: {e}"
 
-    @app.route('/debug-500')
-    def debug_500():
-        import traceback as tb
-        try:
-            from models.db import get_db
-            from datetime import datetime, timedelta
-            from utils.helpers import serialize_doc
-            db = get_db()
-            now = datetime.utcnow()
-            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            stats = {
-                "total_users": db.users.count_documents({}),
-                "total_products": db.products.count_documents({"status": "active"}),
-                "total_orders": db.orders.count_documents({"payment_status": "paid"}),
-                "total_revenue": sum(o.get('total', 0) for o in db.orders.find({"payment_status": "paid"}, {"total": 1})),
-                "month_orders": db.orders.count_documents({"payment_status": "paid", "paid_at": {"$gte": month_start}}),
-                "month_revenue": sum(o.get('total', 0) for o in db.orders.find({"payment_status": "paid", "paid_at": {"$gte": month_start}}, {"total": 1})),
-                "pending_reviews": db.reviews.count_documents({"approved": False}),
-                "pending_custom_orders": db.custom_orders.count_documents({"status": "pending"}),
-                "total_downloads": db.download_logs.count_documents({}),
-            }
-            recent_orders = list(db.orders.find({"payment_status": "paid"}).sort("paid_at", -1).limit(5))
-            recent_users = list(db.users.find().sort("created_at", -1).limit(5))
-            revenue_chart = []
-            for i in range(6, -1, -1):
-                day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
-                day_end = day_start + timedelta(days=1)
-                day_rev = sum(o.get('total', 0) for o in db.orders.find({"payment_status": "paid", "paid_at": {"$gte": day_start, "$lt": day_end}}, {"total": 1}))
-                revenue_chart.append({"date": day_start.strftime("%b %d"), "revenue": day_rev})
-            return render_template('admin/dashboard.html',
-                stats=stats,
-                recent_orders=[serialize_doc(o) for o in recent_orders],
-                recent_users=[serialize_doc(u) for u in recent_users],
-                revenue_chart=revenue_chart)
-        except Exception:
-            return f"<pre>{tb.format_exc()}</pre>"
-
+    # CSRF exempt — sab AJAX-based hain
     csrf.exempt(auth_bp)
     csrf.exempt(admin_bp)
+    csrf.exempt(marketplace_bp)
+    csrf.exempt(cart_bp)
+    csrf.exempt(checkout_bp)
+    csrf.exempt(user_bp)
+
     return app
 
 app = create_app()
