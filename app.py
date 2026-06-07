@@ -88,8 +88,33 @@ def create_app():
         except Exception as e:
             return f"Error: {e}"
 
+    @app.route('/debug-500')
+    def debug_500():
+        import traceback as tb
+        try:
+            from models.db import get_db
+            from datetime import datetime, timedelta
+            from utils.helpers import serialize_doc
+            db = get_db()
+            now = datetime.utcnow()
+            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            stats = {
+                "total_users": db.users.count_documents({}),
+                "total_products": db.products.count_documents({"status": "active"}),
+                "total_orders": db.orders.count_documents({"payment_status": "paid"}),
+                "total_revenue": sum(o.get('total', 0) for o in db.orders.find({"payment_status": "paid"}, {"total": 1})),
+                "month_orders": db.orders.count_documents({"payment_status": "paid", "paid_at": {"$gte": month_start}}),
+                "month_revenue": sum(o.get('total', 0) for o in db.orders.find({"payment_status": "paid", "paid_at": {"$gte": month_start}}, {"total": 1})),
+                "pending_reviews": db.reviews.count_documents({"approved": False}),
+                "pending_custom_orders": db.custom_orders.count_documents({"status": "pending"}),
+                "total_downloads": db.download_logs.count_documents({}),
+            }
+            return str(stats)
+        except Exception:
+            return f"<pre>{tb.format_exc()}</pre>"
+
     csrf.exempt(auth_bp)
-    csrf.exempt(admin_bp)  # ← YAHI FIX HAI
+    csrf.exempt(admin_bp)
     return app
 
 app = create_app()
