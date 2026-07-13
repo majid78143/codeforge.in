@@ -13,8 +13,8 @@ class Config:
     MONGO_DB_NAME = "codeforge_market"
 
     # Razorpay (editable from admin panel — defaults shown here)
-    RAZORPAY_KEY_ID = "rzp_test_YOUR_KEY_ID"
-    RAZORPAY_KEY_SECRET = "YOUR_KEY_SECRET"
+    RAZORPAY_KEY_ID = "rzp_live_TCTb1rwwA8rghn"
+    RAZORPAY_KEY_SECRET = "pq9Sjdq9XFskgcfz5bLqKVoD"
 
     # Firebase (frontend only — kept here for template injection)
     FIREBASE_CONFIG = {
